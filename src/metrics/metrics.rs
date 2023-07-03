@@ -8,12 +8,12 @@ use rocket::{ fairing::{ Info, Kind, Fairing }, Request, Data, Response };
 pub struct PrometheusMetrics {
     http_requests_total: IntCounterVec,
     http_requests_duration_seconds: HistogramVec,
-    registery: Registry,
+    registry: Registry,
 }
 
 impl PrometheusMetrics {
     pub fn new(namespace: &str) -> Self {
-        let registery = Registry::new();
+        let registry = Registry::new();
 
         let http_requests_total_opts = opts!(
             "http_requests_total",
@@ -32,13 +32,13 @@ impl PrometheusMetrics {
             &["endpoint", "method", "status"]
         ).unwrap();
 
-        registery.register(Box::new(http_requests_total.clone())).unwrap();
-        registery.register(Box::new(http_requests_duration_seconds.clone())).unwrap();
+        registry.register(Box::new(http_requests_total.clone())).unwrap();
+        registry.register(Box::new(http_requests_duration_seconds.clone())).unwrap();
 
         Self {
             http_requests_total,
             http_requests_duration_seconds,
-            registery,
+            registry,
         }
     }
 
@@ -60,7 +60,7 @@ impl Clone for PrometheusMetrics {
         Self {
             http_requests_total: self.http_requests_total.clone(),
             http_requests_duration_seconds: self.http_requests_duration_seconds.clone(),
-            registery: self.registery.clone(),
+            registry: self.registry.clone(),
         }
     }
 }
@@ -69,7 +69,7 @@ impl Clone for PrometheusMetrics {
 struct TimerStart(Option<Instant>);
 
 pub trait ArcRwLockPrometheusTrait {
-    type MyRwLock;
+    type ArcRwLock;
     fn clone(&self) -> Arc<RwLock<PrometheusMetrics>>;
 }
 
@@ -94,7 +94,7 @@ impl Clone for ArcRwLockPrometheus {
 }
 
 impl ArcRwLockPrometheusTrait for ArcRwLockPrometheus {
-    type MyRwLock = Arc<RwLock<PrometheusMetrics>>;
+    type ArcRwLock = Arc<RwLock<PrometheusMetrics>>;
 
     fn clone(&self) -> Arc<RwLock<PrometheusMetrics>> {
         Arc::clone(&self.rwLock)
