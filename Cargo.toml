@@ -1,5 +1,5 @@
 [package]
-name = "rocket-metric-collector"
+name = "valensas-actuator"
 version = "0.1.0"
 edition = "2021"
 
