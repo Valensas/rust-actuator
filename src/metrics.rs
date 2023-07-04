@@ -1,4 +1,78 @@
-#![allow(non_snake_case)]
+//! # Rocket Prometheus Metrics Library
+//!
+//! This library provides Prometheus metrics collection capabilities for Rocket applications.
+//! It allows you to track and record metrics related to HTTP requests made to Rocket endpoints.
+//!
+//! ## Usage
+//!
+//! To use this library, you need to create an instance of `ArcRwLockPrometheus` and attach it as a Rocket fairing.
+//! The fairing will automatically collect metrics for each incoming HTTP request and response.
+//!
+//!
+//! Create an instance of `ArcRwLockPrometheus` and attach it as a fairing to your Rocket application:
+//!
+//! ```rust
+//! #[macro_use]
+//! extern crate rocket;
+//!
+//! use std::sync::{Arc, RwLock};
+//! use rocket::{Build, Rocket};
+//! use rocket_metric_collector::metrics::{ArcRwLockPrometheus, PrometheusMetrics};
+//!
+//! #[get("/")]
+//! fn index() -> &'static str {
+//!     "Hello, world!"
+//! }
+//!
+//! #[launch]
+//! fn rocket() -> Rocket<Build> {
+//!     let prometheus = Arc::new(RwLock::new(PrometheusMetrics::new("your_namespace")));
+//!     let prometheus_fairing = ArcRwLockPrometheus::new(prometheus.clone());
+//!
+//!     Rocket::build()
+//!         .attach(prometheus_fairing.clone())
+//!         .manage(prometheus_fairing)
+//!         .mount("/", routes![index])
+//! }
+//! ```
+//!
+//! Make sure to replace `"your_namespace"` with your desired namespace for Prometheus metrics.
+//!
+//! In the above example, `PrometheusMetrics::new("your_namespace")` creates a new instance of `PrometheusMetrics` with the specified namespace.
+//! The `ArcRwLockPrometheus` instance is then cloned and passed to the Rocket application as a managed state and as a fairing using `rocket.manage()` and `.attach()` methods respectively.
+//!
+//! With the fairing attached, the library will automatically collect metrics for each incoming request and response.
+//! The collected metrics can be accessed through the `ArcRwLockPrometheus` instance.
+//!
+//! ## Example
+//!
+//! Here's an example of accessing the metrics from the `ArcRwLockPrometheus` instance:
+//!
+//! ```rust
+//! use rocket::{get};
+//! use rocket_metric_collector::metrics::metrics::{PrometheusMetrics, ArcRwLockPrometheus};
+//!
+//! #[get("/hello")]
+//! async fn hello() -> &'static str {
+//!     // Increment the total number of HTTP requests for the '/hello' endpoint
+//!     prometheus.http_requests_total()
+//!         .with_label_values(&["/hello", "GET", "200"])
+//!         .inc();
+//!
+//!     "Hello, World!"
+//! }
+//! ```
+//!
+//! In the above example, the `http_requests_total` counter is incremented for the `/hello` endpoint with the method `GET` and status `200`.
+//!
+//! ---
+//!
+//! With this library, you can easily collect Prometheus metrics for your Rocket application endpoints and gain insights into your application's performance.
+//!
+
+
+
+#[allow(non_snake_case)]
 use std::{ time::Instant, sync::{ RwLock, Arc } };
 
 use prometheus::{ opts, HistogramVec, IntCounterVec, Registry };
@@ -43,7 +117,7 @@ impl PrometheusMetrics {
     }
 
     pub const fn registry(&self) -> &Registry {
-        &self.registery
+        &self.registry
     }
 
     pub fn http_requests_total(&self) -> &IntCounterVec {
