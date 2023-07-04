@@ -3,6 +3,13 @@
 //! This library provides Prometheus metrics collection capabilities for Rocket applications.
 //! It allows you to track and record metrics related to HTTP requests made to Rocket endpoints.
 //!
+//! ## Installation
+//! Add the following to your `Cargo.toml` file:
+//! ```toml
+//! [dependencies]
+//! valensas_actuator = "0.1.0"
+//! ```
+//!
 //! ## Usage
 //!
 //! To use this library, you need to create an instance of `ArcRwLockPrometheus` and attach it as a Rocket fairing.
