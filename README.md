@@ -14,4 +14,4 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-valensas-actuator = "0.1.1"
+valensas-actuator = "0.1.2"
