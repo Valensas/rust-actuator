@@ -79,7 +79,7 @@
 //!     let mut buffer = vec![];
 //!     let encoder = TextEncoder::new();
 //!     encoder
-//!         .encode(&prometheus_metrics.rwLock.read().unwrap().registry().gather(), &mut buffer)
+//!         .encode(&prometheus_metrics.rw_lock.read().unwrap().registry().gather(), &mut buffer)
 //!         .unwrap();
 //!     let body = String::from_utf8(buffer.clone()).unwrap();
 //!     Ok(body)
