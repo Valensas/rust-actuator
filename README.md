@@ -6,7 +6,7 @@ Valensas Actuator is a Rust library that provides Prometheus metrics collection 
 
 To use this library, you need to create an instance of `ArcRwLockPrometheus` and attach it as a fairing to your Rocket application. The fairing will automatically collect metrics for each incoming HTTP request and response.
 
-For detailed information visit: https://crates.io/crates/valensas-actuator 
+For detailed information visit: https://docs.rs/valensas-actuator 
 
 ### Installation
 
@@ -14,4 +14,4 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-valensas_actuator = "0.1.0"
+valensas-actuator = "0.1.1"
