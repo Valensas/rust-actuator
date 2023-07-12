@@ -1,5 +1,5 @@
 [package]
-name = "mpc-prometheus"
+name = "valensas-actuator"
 version = "0.1.0"
 edition = "2021"
 
