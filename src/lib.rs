@@ -7,7 +7,7 @@
 //! Add the following to your `Cargo.toml` file:
 //! ```toml
 //! [dependencies]
-//! valensas_actuator = "0.1.2"
+//! valensas_actuator = "0.1.3"
 //! ```
 //!
 //! ## Usage
