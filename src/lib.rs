@@ -94,3 +94,7 @@
 //!
 
 pub mod metrics;
+
+#[cfg(feature = "grpc")]
+pub mod grpc_metrics;
+
