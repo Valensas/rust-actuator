@@ -17,7 +17,7 @@ pub struct GrpcMetricLayer {
 }
 
 impl GrpcMetricLayer {
-    pub(crate) fn new(prom: Arc<RwLock<PrometheusMetrics>>) -> Self {
+    pub fn new(prom: Arc<RwLock<PrometheusMetrics>>) -> Self {
         Self {
             prometheus: prom
         }
@@ -54,8 +54,7 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
     }
 
     fn call(&mut self, req: hyper::Request<Body>) -> Self::Future {
-        let clone = self.inner.clone();
-        let mut inner = std::mem::replace(&mut self.inner, clone);
+        let mut inner = self.inner.clone();
         let prom = self.prometheus.read().unwrap().clone();
         Box::pin(async move {
             let start = Instant::now();
