@@ -1,6 +1,6 @@
 [package]
 name = "valensas-actuator"
-version = "0.1.3"
+version = "0.2.0"
 edition = "2021"
 description = "A library that provides Prometheus metrics collection capabilities for Rocket applications."
 license = "MIT"
