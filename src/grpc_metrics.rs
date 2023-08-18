@@ -1,4 +1,4 @@
-use std::{sync::{Arc, RwLock}, time::Instant};
+use std::{sync::{Arc}, time::Instant};
 use std::{
     pin::Pin,
     task::{Context, Poll},
@@ -6,6 +6,7 @@ use std::{
 use rocket::http::hyper;
 use rocket::http::hyper::Body;
 use rocket::log;
+use rocket::tokio::sync::RwLock;
 use tonic::body::BoxBody;
 use tower::{Layer, Service};
 
@@ -55,8 +56,10 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
 
     fn call(&mut self, req: hyper::Request<Body>) -> Self::Future {
         let mut inner = self.inner.clone();
-        let prom = self.prometheus.read().unwrap().clone();
+        let arc_prometheus_metrics = self.prometheus.clone();
         Box::pin(async move {
+            let prometheus_metrics = arc_prometheus_metrics.read().await;
+
             let start = Instant::now();
 
             let grpc_method = req.uri().path().to_string();
@@ -77,11 +80,11 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
                 grpc_status
             );
 
-            prom.http_requests_duration_seconds()
+            prometheus_metrics.http_requests_duration_seconds()
                 .with_label_values(&[grpc_method.as_str(), "grpc", grpc_status.as_str()])
                 .observe(duration.as_secs_f64());
 
-            prom.http_requests_total()
+            prometheus_metrics.http_requests_total()
                 .with_label_values(&[grpc_method.as_str(), "grpc", grpc_status.as_str()])
                 .inc();
 
