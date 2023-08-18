@@ -39,16 +39,16 @@ pub struct GrpcMetric<S> {
     prometheus: Arc<RwLock<PrometheusMetrics>>,
 }
 
-type BoxFuture<'a, T> = Pin<Box<dyn std::future::Future<Output=T> + Send + 'a>>;
+type BoxFuture<T> = Pin<Box<dyn std::future::Future<Output=T> + Send>>;
 
 impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
     where
         S: Service<hyper::Request<Body>, Response=hyper::Response<BoxBody>> + Clone + Send + 'static,
-        S::Future: Send + 'static,
+        S::Future: Send,
 {
     type Response = S::Response;
     type Error = S::Error;
-    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = BoxFuture<Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
