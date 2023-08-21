@@ -67,7 +67,7 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
 
             let grpc_status = match response.headers().get("grpc-status") {
                 Some(header) => header.to_str().unwrap().to_string(),
-                None => String::from("Unknown").to_string(),
+                None => String::from("0").to_string(),
             };
 
             let duration = Instant::now().duration_since(start);
