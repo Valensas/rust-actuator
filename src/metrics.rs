@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use std::{
-    sync::{Arc, RwLock},
+    sync::{Arc},
     time::Instant,
 };
 
@@ -10,6 +10,7 @@ use rocket::{
     fairing::{Fairing, Info, Kind},
     Data, Request, Response,
 };
+use rocket::tokio::sync::RwLock;
 
 pub struct PrometheusMetrics {
     http_requests_total: IntCounterVec,
@@ -133,7 +134,7 @@ impl Fairing for ArcRwLockPrometheus {
         let status = response.status().code.to_string();
         self.rw_lock
             .read()
-            .unwrap()
+            .await
             .http_requests_total
             .with_label_values(&[endpoint, method, status.as_str()])
             .inc();
@@ -143,7 +144,7 @@ impl Fairing for ArcRwLockPrometheus {
             let duration_secs = duration.as_secs_f64();
             self.rw_lock
                 .read()
-                .unwrap()
+                .await
                 .http_requests_duration_seconds
                 .with_label_values(&[endpoint, method, status.as_str()])
                 .observe(duration_secs);

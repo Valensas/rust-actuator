@@ -7,10 +7,21 @@
 //! Add the following to your `Cargo.toml` file:
 //! ```toml
 //! [dependencies]
-//! valensas_actuator = "0.1.3"
+//! valensas_actuator = "0.2.0"
 //! ```
 //!
+//! ## Enabling gRPC Metrics
+//! To enable gRPC metrics, you need to add the `grpc` feature to your `Cargo.toml`:
+//! ```toml
+//! [dependencies]
+//! valensas-actuator = { version = "0.2.0", features = ["grpc"] }
+//! ```
+//! Once you have enabled the grpc feature, you can use the GrpcMetricLayer to collect gRPC metrics.
+//! The GrpcMetricLayer will automatically collect metrics for gRPC requests handled by the service.
+//!
 //! ## Usage
+//!
+//! `Configure Rocket server`
 //!
 //! To use this library, you need to create an instance of `ArcRwLockPrometheus` and attach it as a Rocket fairing.
 //! The fairing will automatically collect metrics for each incoming HTTP request and response.
@@ -50,6 +61,32 @@
 //!
 //! With the fairing attached, the library will automatically collect metrics for each incoming request and response.
 //! The collected metrics can be accessed through the `ArcRwLockPrometheus` instance.
+//!
+//! `Configure Grpc Metrics`
+//!
+//! To use the GrpcMetricLayer, you need to create an instance of it and add it to your Rocket service.
+//!
+//! ```rust
+//! use std::sync::Arc;
+//! use std::time::Duration;
+//!
+//! use tokio::sync::RwLock;
+//! use tonic::transport::Server;
+//! use valensas_actuator::metrics::PrometheusMetrics;
+//!
+//! let prometheus = Arc::new(RwLock::new(PrometheusMetrics::new("your_namespace")));
+//! let layer = tower::ServiceBuilder::new()
+//!     .timeout(Duration::from_secs(30))
+//!     .layer(GrpcMetricLayer::new(Arc::clone(&prometheus)))
+//!     .into_inner();
+//!
+//! tokio::spawn(
+//!     Server::builder()
+//!         .layer(layer)
+//!         .add_service(YOUR_SERVICE)
+//!         .serve(address)
+//! );
+//! ```
 //!
 //! ## Example
 //!
@@ -94,3 +131,7 @@
 //!
 
 pub mod metrics;
+
+#[cfg(feature = "grpc")]
+pub mod grpc_metrics;
+
