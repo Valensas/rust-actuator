@@ -1,137 +1,85 @@
-//! # Rocket Prometheus Metrics Library - Valensas Actuator
+//! # Valensas Actuator
 //!
-//! This library provides Prometheus metrics collection capabilities for Rocket applications.
-//! It allows you to track and record metrics related to HTTP requests made to Rocket endpoints.
+//! This library provides facilities for web server lifecycle operations.
+//!
+//! Features:
+//!
+//! - Health checks: liveness and readiness
+//!
+//!   - [Diesel](https://github.com/diesel-rs/diesel) health
+//!
+//!   - [Tonic Health](https://github.com/hyperium/tonic/tree/master/tonic-health)
+//!
+//!   - Customizable indicators
+//!
+//! - [Prometheus](http://prometheus.io) metric collection
+//!
+//!   - Rocket http request metrics
+//!
+//!   - Tonic grpc request metrics
+//!
 //!
 //! ## Installation
-//! Add the following to your `Cargo.toml` file:
+//!
+//! Add the following to your `Cargo.toml`:
+//!
 //! ```toml
 //! [dependencies]
-//! valensas_actuator = "0.2.0"
+//! valensas-actuator = "*"
 //! ```
 //!
-//! ## Enabling gRPC Metrics
-//! To enable gRPC metrics, you need to add the `grpc` feature to your `Cargo.toml`:
-//! ```toml
-//! [dependencies]
-//! valensas-actuator = { version = "0.2.0", features = ["grpc"] }
-//! ```
-//! Once you have enabled the grpc feature, you can use the GrpcMetricLayer to collect gRPC metrics.
-//! The GrpcMetricLayer will automatically collect metrics for gRPC requests handled by the service.
+//! ## Features
 //!
-//! ## Usage
+//! The following crate features are available to use:
 //!
-//! `Configure Rocket server`
+//! health: includes health check related functionalities
 //!
-//! To use this library, you need to create an instance of `ArcRwLockPrometheus` and attach it as a Rocket fairing.
-//! The fairing will automatically collect metrics for each incoming HTTP request and response.
+//! health-tonic: includes tonic-health health indicator
+//!
+//! health-diesel: includes diesel health indicator
+//!
+//! promtheteus-rocket: includes Prometheus scrap endpoint and Rocket http request metric collection
+//!
+//! prometheus-tonic: includes Tonic grpc request metric collection
+//!
+//! ## Examples
+//!
+//! For detailed usage examples, see the examples directory.
 //!
 //!
-//! Create an instance of `ArcRwLockPrometheus` and attach it as a fairing to your Rocket application:
+//! ### health.rs
 //!
-//! ```rust
-//! #[macro_use]
-//! extern crate rocket;
+//! Contains examples on how to configure health check endpoints and custom health indicators.
 //!
-//! use std::sync::{Arc, RwLock};
-//! use rocket::{Build, Rocket};
-//! use valensas_actuator::metrics::{ArcRwLockPrometheus, PrometheusMetrics};
+//! Run with `cargo run --example health --features health,health-diesel`.
 //!
-//! #[get("/")]
-//! fn index() -> &'static str {
-//!     "Hello, world!"
-//! }
+//! ### prometheus.rs
 //!
-//! #[launch]
-//! fn rocket() -> Rocket<Build> {
-//!     let prometheus = Arc::new(RwLock::new(PrometheusMetrics::new("your_namespace")));
-//!     let prometheus_fairing = ArcRwLockPrometheus::new(prometheus.clone());
+//! Contains examples on how to configure Prometheus scrap endpoint and Rocket request metric collection.
 //!
-//!     Rocket::build()
-//!         .attach(prometheus_fairing.clone())
-//!         .manage(prometheus_fairing)
-//!         .mount("/", routes![index])
-//! }
-//! ```
+//! Run with `cargo run --example prometheus --features prometheus-rocket`.
 //!
-//! Make sure to replace `"your_namespace"` with your desired namespace for Prometheus metrics.
+//! ### prometheus_tonic.rs
 //!
-//! In the above example, `PrometheusMetrics::new("your_namespace")` creates a new instance of `PrometheusMetrics` with the specified namespace.
-//! The `ArcRwLockPrometheus` instance is then cloned and passed to the Rocket application as a managed state and as a fairing using `rocket.manage()` and `.attach()` methods respectively.
+//! Contains examples on how to configure Prometheus scrap endpoint and Tonic gRPC request metric collection.
 //!
-//! With the fairing attached, the library will automatically collect metrics for each incoming request and response.
-//! The collected metrics can be accessed through the `ArcRwLockPrometheus` instance.
-//!
-//! `Configure Grpc Metrics`
-//!
-//! To use the GrpcMetricLayer, you need to create an instance of it and add it to your Rocket service.
-//!
-//! ```rust
-//! use std::sync::Arc;
-//! use std::time::Duration;
-//!
-//! use tokio::sync::RwLock;
-//! use tonic::transport::Server;
-//! use valensas_actuator::metrics::PrometheusMetrics;
-//!
-//! let prometheus = Arc::new(RwLock::new(PrometheusMetrics::new("your_namespace")));
-//! let layer = tower::ServiceBuilder::new()
-//!     .timeout(Duration::from_secs(30))
-//!     .layer(GrpcMetricLayer::new(Arc::clone(&prometheus)))
-//!     .into_inner();
-//!
-//! tokio::spawn(
-//!     Server::builder()
-//!         .layer(layer)
-//!         .add_service(YOUR_SERVICE)
-//!         .serve(address)
-//! );
-//! ```
-//!
-//! ## Example
-//!
-//! Here's an example of accessing the metrics from the `ArcRwLockPrometheus` instance:
-//!
-//! ```rust
-//! use std::sync::{Arc, RwLock};
-//! use rocket::{Build, Rocket, State, routes, get, launch};
-//! use prometheus::{Encoder, TextEncoder};
-//! use valensas_actuator::metrics::{ArcRwLockPrometheus, PrometheusMetrics};
-//!
-//! #[launch]
-//! fn rocket() -> Rocket<Build> {
-//!     let prometheus = Arc::new(RwLock::new(PrometheusMetrics::new("your_namespace")));
-//!     let prometheus_fairing = ArcRwLockPrometheus::new(prometheus.clone());
-//!
-//!     Rocket::build()
-//!         .attach(prometheus_fairing.clone())
-//!         .manage(prometheus_fairing)
-//!         .mount("/", routes![index, metrics])
-//! }
-//!
-//! #[get("/metrics")]
-//! async fn metrics(
-//!     prometheus_metrics: &State<ArcRwLockPrometheus>
-//! ) -> Result<String, rocket::response::status::Custom<String>> {
-//!     let mut buffer = vec![];
-//!     let encoder = TextEncoder::new();
-//!     encoder
-//!         .encode(&prometheus_metrics.rw_lock.read().unwrap().registry().gather(), &mut buffer)
-//!         .unwrap();
-//!     let body = String::from_utf8(buffer.clone()).unwrap();
-//!     Ok(body)
-//! }
-//! ```
-//!
-//! In the above example, the `/metrics` endpoint returns the collected metrics of the Rocket application.
-//!
-//! ---
-//!
-//! With this library, you can easily collect Prometheus metrics for your Rocket application endpoints and gain insights into your application's performance.
+//! Run with `cargo run --example prometheus_tonic --features prometheus-tonic`.
 //!
 
-pub mod metrics;
+use rocket::{Build, Rocket};
 
-#[cfg(feature = "grpc")]
-pub mod grpc_metrics;
+pub mod actuator;
 
+#[cfg(feature = "health")]
+pub mod health;
+
+#[cfg(feature = "prometheus-rocket")]
+pub mod prometheus;
+
+pub struct Actuator {
+    rocket: Rocket<Build>,
+}
+
+pub fn actuate(rocket: rocket::Rocket<Build>) -> Actuator {
+    Actuator::new(rocket)
+}

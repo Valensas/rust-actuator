@@ -1,50 +1,47 @@
-use std::{sync::{Arc}, time::Instant};
 use std::{
     pin::Pin,
     task::{Context, Poll},
+    time::Instant,
 };
-use rocket::http::hyper;
+
 use rocket::http::hyper::Body;
-use rocket::log;
-use rocket::tokio::sync::RwLock;
+use rocket::http::hyper::{self};
 use tonic::body::BoxBody;
-use tower::{Layer, Service};
+use tower::Service;
 
-use crate::metrics::PrometheusMetrics;
+use super::{HttpRequestCollectorConfig, HttpRequestCollectorMetrics, TonicGrpcCollectorLayer};
 
-#[derive(Clone)]
-pub struct GrpcMetricLayer {
-    prometheus: Arc<RwLock<PrometheusMetrics>>,
+impl TonicGrpcCollectorLayer {
+    pub fn new(config: &HttpRequestCollectorConfig) -> Result<Self, prometheus::Error> {
+        Ok(Self {
+            metrics: HttpRequestCollectorMetrics::from(config)?,
+        })
+    }
 }
 
-impl GrpcMetricLayer {
-    pub fn new(prom: Arc<RwLock<PrometheusMetrics>>) -> Self {
-        Self {
-            prometheus: prom
+impl<S> tower::Layer<S> for TonicGrpcCollectorLayer {
+    type Service = TonicGrpcCollector<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        TonicGrpcCollector {
+            inner,
+            metrics: self.metrics.clone(),
         }
     }
 }
 
-impl<S> Layer<S> for GrpcMetricLayer {
-    type Service = GrpcMetric<S>;
-
-    fn layer(&self, service: S) -> Self::Service {
-        GrpcMetric { inner: service, prometheus: Arc::clone(&self.prometheus) }
-    }
-}
-
 #[derive(Clone)]
-pub struct GrpcMetric<S> {
+pub struct TonicGrpcCollector<S> {
     inner: S,
-    prometheus: Arc<RwLock<PrometheusMetrics>>,
+    metrics: HttpRequestCollectorMetrics,
 }
 
-type BoxFuture<T> = Pin<Box<dyn std::future::Future<Output=T> + Send>>;
+type BoxFuture<T> = Pin<Box<dyn std::future::Future<Output = T> + Send>>;
 
-impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
-    where
-        S: Service<hyper::Request<Body>, Response=hyper::Response<BoxBody>> + Clone + Send + 'static,
-        S::Future: Send,
+impl<S> Service<hyper::Request<Body>> for TonicGrpcCollector<S>
+where
+    S: Service<hyper::Request<Body>, Response = hyper::Response<BoxBody>> + Clone + Send + 'static,
+    S::Future: Send,
 {
     type Response = S::Response;
     type Error = S::Error;
@@ -56,10 +53,8 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
 
     fn call(&mut self, req: hyper::Request<Body>) -> Self::Future {
         let mut inner = self.inner.clone();
-        let arc_prometheus_metrics = self.prometheus.clone();
+        let metrics = self.metrics.clone();
         Box::pin(async move {
-            let prometheus_metrics = arc_prometheus_metrics.read().await;
-
             let start = Instant::now();
 
             let grpc_method = req.uri().path().to_string();
@@ -72,7 +67,7 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
 
             let duration = Instant::now().duration_since(start);
 
-            log::debug_!(
+            log::debug!(
                 "Tracing Record: {} is called. Response time is {}. Status code: {}. Grpc Status Code: {}",
                 grpc_method,
                 format!("{}s {}ms {}ns", duration.as_secs(), duration.subsec_millis(), duration.subsec_nanos()),
@@ -80,13 +75,10 @@ impl<S> Service<hyper::Request<Body>> for GrpcMetric<S>
                 grpc_status
             );
 
-            prometheus_metrics.http_requests_duration_seconds()
+            metrics
+                .http_requests_duration_seconds
                 .with_label_values(&[grpc_method.as_str(), "grpc", grpc_status.as_str()])
                 .observe(duration.as_secs_f64());
-
-            prometheus_metrics.http_requests_total()
-                .with_label_values(&[grpc_method.as_str(), "grpc", grpc_status.as_str()])
-                .inc();
 
             Ok(response)
         })
