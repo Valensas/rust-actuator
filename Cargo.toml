@@ -19,6 +19,7 @@ tower = { version = "0.4.13", optional = true }
 serde = { version = "1.0.185", optional = true }
 diesel = { version = "2.1.0", optional = true }
 futures = { version = "0.3.28", optional = true }
+r2d2 = { version = "0.8.10", optional = true }
 
 [features]
 health = ["dep:serde", "dep:futures"]
@@ -26,6 +27,7 @@ health-tonic = ["health", "dep:tonic", "dep:tonic-health"]
 health-diesel = ["health", "dep:diesel"]
 prometheus-rocket = ["dep:prometheus"]
 prometheus-tonic = ["prometheus-rocket", "dep:tonic", "dep:tower"]
+prometheus-r2d2 = ["prometheus-rocket", "dep:r2d2"]
 
 [[example]]
 name = "health"
@@ -39,8 +41,13 @@ required-features = ["prometheus-rocket"]
 name = "prometheus_tonic"
 required-features = ["prometheus-rocket", "prometheus-tonic"]
 
+[[example]]
+name = "prometheus_r2d2"
+required-features = ["prometheus-rocket", "prometheus-r2d2"]
+
 # Dependencies for examples
 [dev-dependencies]
+r2d2 = "0.8.10"
 tokio = "1.32.0"
 tonic-health = "0.9.2"
 diesel = { version = "2.1.0", features = ["sqlite", "r2d2"] }
