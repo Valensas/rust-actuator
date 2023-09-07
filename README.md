@@ -20,6 +20,8 @@ Features:
 
   - r2d2 connection pool metrics
 
+  - Tokio runtime metrics
+
 
 ## Installation
 
@@ -71,6 +73,10 @@ Run with `cargo run --example prometheus_tonic --features prometheus-tonic`.
 
 ### prometheus_r2d2.rs
 
-Contains on how to configure the r2d2 connection pool collector to expose pool usage metrics.
+Contains examples on how to configure the r2d2 connection pool collector to expose pool usage metrics.
 
 Run with `cargo run --example prometheus_r2d2 --features prometheus-r2d2`
+
+### prometheus_tokio.rs
+
+Contains examples on how to configure the Tokio runtime pool collector to expose runtime usage metrics.

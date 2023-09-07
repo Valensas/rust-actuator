@@ -20,6 +20,7 @@ serde = { version = "1.0.185", optional = true }
 diesel = { version = "2.1.0", optional = true }
 futures = { version = "0.3.28", optional = true }
 r2d2 = { version = "0.8.10", optional = true }
+tokio = { version = "1.32.0", optional = true }
 
 [features]
 health = ["dep:serde", "dep:futures"]
@@ -28,7 +29,7 @@ health-diesel = ["health", "dep:diesel"]
 prometheus-rocket = ["dep:prometheus"]
 prometheus-tonic = ["prometheus-rocket", "dep:tonic", "dep:tower"]
 prometheus-r2d2 = ["prometheus-rocket", "dep:r2d2"]
-
+prometheus-tokio = ["prometheus-rocket", "dep:tokio"]
 [[example]]
 name = "health"
 required-features = ["health", "health-diesel"]
@@ -44,6 +45,10 @@ required-features = ["prometheus-rocket", "prometheus-tonic"]
 [[example]]
 name = "prometheus_r2d2"
 required-features = ["prometheus-rocket", "prometheus-r2d2"]
+
+[[example]]
+name = "prometheus_tokio"
+required-features = ["prometheus-rocket", "prometheus-tokio"]
 
 # Dependencies for examples
 [dev-dependencies]
