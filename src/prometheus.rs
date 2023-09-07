@@ -10,6 +10,9 @@ pub mod rocket_http_collector;
 #[cfg(feature = "prometheus-tonic")]
 pub mod tonic_grpc_collector;
 
+#[cfg(feature = "prometheus-r2d2")]
+pub mod r2d2;
+
 pub struct Endpoint {
     registry: Registry,
 }

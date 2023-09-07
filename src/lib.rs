@@ -18,6 +18,8 @@
 //!
 //!   - Tonic grpc request metrics
 //!
+//!   - r2d2 connection pool metrics
+//!
 //!
 //! ## Installation
 //!
@@ -42,6 +44,8 @@
 //!
 //! prometheus-tonic: includes Tonic grpc request metric collection
 //!
+//! prometheus-r2d2: includes r2d2 connection pool metrics collection
+//!
 //! ## Examples
 //!
 //! For detailed usage examples, see the examples directory.
@@ -64,6 +68,12 @@
 //! Contains examples on how to configure Prometheus scrap endpoint and Tonic gRPC request metric collection.
 //!
 //! Run with `cargo run --example prometheus_tonic --features prometheus-tonic`.
+//!
+//! ### prometheus_r2d2.rs
+//!
+//! Contains on how to configure the r2d2 connection pool collector to expose pool usage metrics.
+//!
+//! Run with `cargo run --example prometheus_r2d2 --features prometheus-r2d2`
 //!
 
 use rocket::{Build, Rocket};

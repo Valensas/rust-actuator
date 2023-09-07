@@ -27,7 +27,7 @@ impl crate::health::Indicator for crate::health::check::Tonic {
                 service: self.service.clone(),
             })
             .await
-            .map_err(|e| e.message().to_owned())?;
+            .map_err(|e| format!("status: {}, message: {}", e.code(), e.message()))?;
 
         match response.get_ref().status() {
             ServingStatus::Serving => Ok(()),
