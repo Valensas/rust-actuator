@@ -73,3 +73,7 @@ Cargo.lock
 
 # sqlite files crated by examples
 *.db
+
+.env
+.idea
+.vscode
